@@ -1,0 +1,11 @@
+flowchart LR
+    Midia[Midia]
+    Progresso[Progresso (VO)]
+    Nota[Nota (VO)]
+    IMidiaRepository[IMidiaRepository]
+    CatalogService[CatalogService]
+    Midia --> Progresso
+    Midia --> Nota
+    Midia --> IMidiaRepository
+    CatalogService --> Midia
+    IMidiaRepository -->|persist| Midia

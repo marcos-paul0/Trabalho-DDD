@@ -1,0 +1,10 @@
+python
+from .entities import Midia
+
+class MidiaFactory:
+    """Classe 4: Factory. Garante a criação correta de uma nova mídia."""
+    @staticmethod
+    def criar_item(titulo: str, total: int) -> Midia:
+        if not titulo:
+            raise ValueError("A mídia precisa de um título.")
+        return Midia(titulo=titulo, total_unidades=total)

@@ -1,0 +1,24 @@
+python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class Progresso:
+    """Classe 1: Value Object que valida o consumo da mídia."""
+    atual: int
+    total: int
+
+    def __post_init__(self):
+        if self.atual < 0 or self.atual > self.total:
+            raise ValueError("O progresso não pode ser negativo ou maior que o total.")
+
+    def is_completado(self) -> bool:
+        return self.atual == self.total
+
+@dataclass(frozen=True)
+class Nota:
+    """Classe 2: Value Object que valida a avaliação de 0 a 10."""
+    valor: int
+
+    def __post_init__(self):
+        if not (0 <= self.valor <= 10):
+            raise ValueError("A nota deve estar entre 0 e 10.")

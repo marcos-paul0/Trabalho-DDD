@@ -1,0 +1,24 @@
+python
+from katalog.domain.repositories import IMidiaRepository
+from katalog.domain.factories import MidiaFactory
+
+
+class CatalogoApplicationService:
+    """Application Service: coordena casos de uso, mantendo regras no domínio."""
+    def __init__(self, repository: IMidiaRepository):
+        self.repository = repository
+
+    def adicionar_midia(self, titulo: str, total: int):
+        nova_midia = MidiaFactory.criar_item(titulo, total)
+        self.repository.salvar(nova_midia)
+        return nova_midia
+
+    def atualizar_consumo(self, midia_id: str, progresso: int):
+        midia = self.repository.buscar_por_id(midia_id)
+        midia.registrar_progresso(progresso)
+        self.repository.salvar(midia)
+
+    def concluir_obra(self, midia_id: str, nota: int):
+        midia = self.repository.buscar_por_id(midia_id)
+        midia.concluir(nota)
+        self.repository.salvar(midia)

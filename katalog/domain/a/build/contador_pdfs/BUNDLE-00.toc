@@ -1,0 +1,3 @@
+([('contador_pdfs',
+   '/Users/gustavo/Downloads/DDD/katalog/domain/a/dist/contador_pdfs',
+   'EXECUTABLE')],)
