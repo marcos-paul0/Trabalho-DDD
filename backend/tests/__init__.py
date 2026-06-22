@@ -1,0 +1,3 @@
+"""
+Tests initialization and configuration.
+"""
