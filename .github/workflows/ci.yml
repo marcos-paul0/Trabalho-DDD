@@ -202,6 +202,8 @@ jobs:
       - name: Python dependency audit (pip-audit)
         working-directory: backend
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
           python -m pip install --upgrade pip
           pip install pip-audit
           # Analisa requirements.txt contra base de vulnerabilidades conhecidas.
