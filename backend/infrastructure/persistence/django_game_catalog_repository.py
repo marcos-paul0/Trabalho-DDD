@@ -19,7 +19,9 @@ class DjangoGameCatalogRepository(GameCatalogRepository):
         return self._to_domain(model)
 
     def list_by_user(self, user_id: int) -> list[GameCatalogItem]:
-        return [self._to_domain(model) for model in Game.objects.filter(user_id=user_id)]
+        return [
+            self._to_domain(model) for model in Game.objects.filter(user_id=user_id)
+        ]
 
     def save(self, game: GameCatalogItem) -> GameCatalogItem:
         data = self._to_model_data(game)

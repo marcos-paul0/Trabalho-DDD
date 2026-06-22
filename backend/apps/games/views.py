@@ -39,7 +39,6 @@ class GameViewSet(viewsets.ModelViewSet):
     def _repository(self):
         return DjangoGameCatalogRepository()
 
-
     def _build_update_dto(self, instance, data):
         """Monta um DTO completo combinando dados atuais e dados recebidos.
 
@@ -144,7 +143,6 @@ class GameViewSet(viewsets.ModelViewSet):
         model = Game.objects.get(id=domain_game.id, user=request.user)
         return Response(self.get_serializer(model).data)
 
-
     @action(detail=True, methods=["patch"])
     def register_session(self, request, pk=None):
         """Registra uma sessão de jogo com horas jogadas e progresso opcional."""
@@ -153,7 +151,9 @@ class GameViewSet(viewsets.ModelViewSet):
             hours = int(raw_hours)
         except (TypeError, ValueError):
             return Response(
-                {"detail": "As horas da sessão devem ser informadas como número inteiro."},
+                {
+                    "detail": "As horas da sessão devem ser informadas como número inteiro."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

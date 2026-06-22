@@ -33,7 +33,9 @@ class ReleaseYear:
         if self.value < 1950:
             raise DomainException("O ano de lançamento não pode ser anterior a 1950.")
         if self.value > current_year + 3:
-            raise DomainException("O ano de lançamento não pode estar muito distante no futuro.")
+            raise DomainException(
+                "O ano de lançamento não pode estar muito distante no futuro."
+            )
 
     def __int__(self) -> int:
         return self.value

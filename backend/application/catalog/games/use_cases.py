@@ -82,7 +82,6 @@ class RateGameUseCase:
         return self.repository.save(game)
 
 
-
 class RegisterPlaySessionUseCase:
     def __init__(
         self,

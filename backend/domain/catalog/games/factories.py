@@ -7,7 +7,13 @@ from typing import Any
 from domain.shared.value_objects import MediaTitle, ReleaseYear
 
 from .entities import GameCatalogItem
-from .value_objects import GameRating, GameStatus, HoursPlayed, Platform, ProgressPercentage
+from .value_objects import (
+    GameRating,
+    GameStatus,
+    HoursPlayed,
+    Platform,
+    ProgressPercentage,
+)
 
 
 class GameCatalogItemFactory:

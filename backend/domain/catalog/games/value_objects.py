@@ -23,7 +23,9 @@ class Platform:
     def __post_init__(self):
         normalized = (self.value or "").strip().lower()
         if normalized not in self.ALLOWED:
-            raise DomainException("A plataforma informada não pertence ao catálogo permitido.")
+            raise DomainException(
+                "A plataforma informada não pertence ao catálogo permitido."
+            )
         object.__setattr__(self, "value", normalized)
 
     def __str__(self) -> str:

@@ -115,7 +115,9 @@ class GameCatalogItem:
     def drop(self) -> None:
         """Marca o jogo como abandonado quando ele ainda não foi concluído."""
         if self.status.value == GameStatus.COMPLETED:
-            raise DomainException("Um jogo completado não pode ser abandonado diretamente.")
+            raise DomainException(
+                "Um jogo completado não pode ser abandonado diretamente."
+            )
         self.status = GameStatus(GameStatus.DROPPED)
         self.completed_date = None
         self._ensure_consistency()
@@ -141,14 +143,21 @@ class GameCatalogItem:
                 )
         if self.status.value == GameStatus.COMPLETED:
             if self.progress.value != 100:
-                raise DomainException("Jogos completados devem ter progresso igual a 100.")
+                raise DomainException(
+                    "Jogos completados devem ter progresso igual a 100."
+                )
             if self.completed_date is None:
-                raise DomainException("Jogos completados devem possuir data de conclusão.")
+                raise DomainException(
+                    "Jogos completados devem possuir data de conclusão."
+                )
             if self.user_rating.value is None:
                 raise DomainException(
                     "Jogos completados devem possuir avaliação pessoal."
                 )
-        if self.status.value != GameStatus.COMPLETED and self.completed_date is not None:
+        if (
+            self.status.value != GameStatus.COMPLETED
+            and self.completed_date is not None
+        ):
             raise DomainException(
                 "A data de conclusão só pode existir para jogos completados."
             )
