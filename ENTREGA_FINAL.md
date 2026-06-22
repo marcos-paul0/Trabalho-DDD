@@ -3,8 +3,8 @@
 ## 1. Identificação do projeto
 
 - Nome do projeto: **Katalog / Media Vault**
-- Integrantes do grupo: **preencher com os nomes dos integrantes antes da submissão**
-- Link do repositório: **preencher com o link final do repositório do grupo**
+- Integrantes do grupo: Marcos Paulo, Ana Caroline, Maria Clara 
+- Link do repositório: https://github.com/marcos-paul0/Trabalho-DDD
 - Tecnologia utilizada: **Python, Django, Django REST Framework, React, SQLite/PostgreSQL, pytest**
 - Funcionalidade principal desenvolvida: **gerenciamento do ciclo de vida de jogos no catálogo pessoal do usuário**
 
