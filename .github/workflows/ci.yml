@@ -1,0 +1,262 @@
+name: CI/CD Pipeline
+
+# Pipeline de CI para validar backend (Python/Django) e frontend (Node/JS) em push/PR.
+# Objetivo: impedir que código com erros de lint, testes quebrando ou dependências vulneráveis chegue nas branches principais.
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# Permissão mínima necessária para checkout do repositório.
+permissions:
+  contents: read
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        # Executa comandos dentro da pasta do backend (evita repetir "cd backend").
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Cache de dependências do pip para acelerar execuções repetidas.
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Ruff é usado para lint e formatação; aqui ele é instalado explicitamente.
+          pip install ruff
+
+      - name: Lint (Ruff)
+        run: |
+          # Verifica regras de lint
+          ruff check .
+          # Garante que a formatação está conforme (sem alterar arquivos)
+          ruff format --check .
+
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          # Banco de testes para o job (isolado do seu ambiente local).
+          POSTGRES_DB: media_vault_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    defaults:
+      run:
+        # Executa comandos dentro da pasta do backend.
+        working-directory: backend
+
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Cache de dependências do pip para acelerar execuções repetidas.
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django checks
+        run: |
+          # Valida configurações e integridade do projeto Django.
+          python manage.py check
+          # Garante que não existem migrations pendentes (falha se houver).
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        # Executa testes e gera cobertura apenas do pacote "apps".
+        # Observação: este job assume que o backend consegue conectar no Postgres do service (localhost:5432)
+        # usando as credenciais acima (como isso é configurado depende do settings do projeto).
+        run: pytest --cov=apps
+        env:
+          USE_EXTERNAL_DB_FOR_TESTS: "true"
+          DB_ENGINE: django.db.backends.postgresql
+          DB_NAME: media_vault_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: localhost
+          DB_PORT: "5432"
+
+  frontend-lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        # Executa comandos dentro da pasta do frontend.
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          # Cache do npm para acelerar reinstalações de pacotes.
+          cache: npm
+          cache-dependency-path: frontend/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint (ESLint)
+        run: |
+          # Instala o ESLint localmente para garantir disponibilidade (mesmo que não esteja nas dependências).
+          npm install --no-save eslint
+          # Executa lint no código do frontend e falha se houver warnings.
+          npx eslint src --max-warnings=0
+
+  frontend-build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        # Executa comandos dentro da pasta do frontend.
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          # Cache do npm para acelerar reinstalações de pacotes.
+          cache: npm
+          cache-dependency-path: frontend/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Test
+        # Roda testes em modo CI (sem watch).
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          # Alguns runners/test frameworks usam CI=true para ajustar comportamento (ex.: falhar em warnings, desabilitar watch).
+          CI: true
+
+      - name: Build
+        # Garante que o build do frontend passa (ex.: bundle/compilação).
+        run: npm run build
+
+  sca-dependency-review:
+    # SCA (Software Composition Analysis) em PR: revisa mudanças de dependências e alerta sobre riscos conhecidos.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependency Review (SCA)
+        uses: actions/dependency-review-action@v4
+        continue-on-error: true
+
+  sca-audit:
+    # Auditoria de vulnerabilidades em dependências (Python e Node) em qualquer push/PR.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Python dependency audit (pip-audit)
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+          # Analisa requirements.txt contra base de vulnerabilidades conhecidas.
+          pip-audit -r requirements.txt
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: frontend/package.json
+
+      - name: Node dependency audit (npm audit)
+        working-directory: frontend
+        run: |
+          npm install
+          # Audita apenas dependências de produção para reduzir ruído de toolchain de build.
+          npm audit --omit=dev --audit-level=high
+
+  sast-codeql:
+    name: SAST (CodeQL)
+    # SAST (Static Application Security Testing) via CodeQL para Python e JavaScript.
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ python, javascript ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Autobuild
+        # Tenta identificar e buildar o projeto automaticamente (quando aplicável).
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
+
+  docker-build:
+    # Build do Docker para garantir que o Dockerfile está válido (não publica imagem).
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t media-vault:ci -f docker/Dockerfile .
