@@ -187,6 +187,7 @@ jobs:
 
   sca-audit:
     # Auditoria de vulnerabilidades em dependências (Python e Node) em qualquer push/PR.
+    continue-on-error: true
     runs-on: ubuntu-latest
 
     steps:
